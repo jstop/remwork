@@ -1,5 +1,7 @@
 tmp/*
 summaries/*
+advice/*
+.settings/*
 closet/*
 logs/*
 .env

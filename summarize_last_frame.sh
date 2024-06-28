@@ -5,8 +5,17 @@ source /Users/jstein/workspace/ai/remwork/.env
 # LOG_DIR#VOICE_TOGGLE
 # DEBUG_VOICE_TOGGLE
 # DB_FILE
+IS_RUNNING=$(cat $WORKING_DIR/tmp/is_running.txt)
+
+if [[ "$IS_RUNNING" == "TRUE" ]]; then
+    say -r 200 "Frame summarizing is already running. Exiting."
+    exit 0
+else
+  echo "TRUE" > "$WORKING_DIR/tmp/is_running.txt"
+fi
 
 VOICE_STATE=$(cat $VOICE_TOGGLE)
+ADVICE_VOICE_STATE=$(cat $ADVICE_VOICE_TOGGLE)
 VOICE_DEBUG=$(cat $DEBUG_VOICE_TOGGLE)
 
 FRAME_ID_FILE="$WORKING_DIR/tmp/last_frame_id.txt"
@@ -42,6 +51,7 @@ if [[ "$LAST_FRAME_ID" == "$LATEST_FRAME_ID" ]]; then
   else
     echo "Frame ID has not changed. Exiting." >> "$LOG_FILE"
   fi
+  echo "FALSE" > "$WORKING_DIR/tmp/is_running.txt"
   exit 0
 
 else
@@ -72,16 +82,22 @@ EOF
 
 # SUMMARIZE FRAME -----------------------------------------------------------------
   $WORKING_DIR/ollama_summarize.sh < $FILENAME > "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" 2> "$LOG_FILE"
+  $WORKING_DIR/ollama_advise.sh < "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" > "$WORKING_DIR/advice/$LATEST_FRAME_TIMESTAMP.txt" 2> "$LOG_FILE"
 
   cp "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" "$WORKING_DIR/summaries/now.txt"
+  cp "$WORKING_DIR/advice/$LATEST_FRAME_TIMESTAMP.txt" "$WORKING_DIR/advice/now.txt"
 
   if [ "$DEBUG_STATE" = "ON" ]; then
     say -r 200 "New Summary available"
   fi
 
-
   if [ "$VOICE_STATE" = "ON" ]; then
     say -r 140 "At  $(/opt/homebrew/bin/gdate -d "$LATEST_FRAME_TIMESTAMP 4 hours ago" "+%A at %I:%M %p")"
     say -r 180 -f "$WORKING_DIR/summaries/now.txt"
+      if [ "$ADVICE_VOICE_STATE" = "ON" ]; then
+        say -r 140 "At  $(/opt/homebrew/bin/gdate -d "$LATEST_FRAME_TIMESTAMP 4 hours ago" "+%A at %I:%M %p")"
+        say -r 180 -f "$WORKING_DIR/advice/now.txt"
+      fi
   fi
 fi
+echo "FALSE" > "$WORKING_DIR/tmp/is_running.txt"
