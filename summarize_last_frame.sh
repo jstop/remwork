@@ -5,18 +5,21 @@ source /Users/jstein/workspace/ai/remwork/.env
 # LOG_DIR#VOICE_TOGGLE
 # DEBUG_VOICE_TOGGLE
 # DB_FILE
-IS_RUNNING=$(cat $WORKING_DIR/tmp/is_running.txt)
-
-if [[ "$IS_RUNNING" == "TRUE" ]]; then
-    say -r 200 "Frame summarizing is already running. Exiting."
-    exit 0
-else
-  echo "TRUE" > "$WORKING_DIR/tmp/is_running.txt"
-fi
-
+RUN_SWITCH=$(cat $WORKING_DIR/.settings/run_switch.txt)
 VOICE_STATE=$(cat $VOICE_TOGGLE)
 ADVICE_VOICE_STATE=$(cat $ADVICE_VOICE_TOGGLE)
 VOICE_DEBUG=$(cat $DEBUG_VOICE_TOGGLE)
+
+if [[ "$RUN_SWITCH" == "OFF" ]]; then
+  if [[ "$VOICE_DEBUG" == "ON" ]]; then
+    say -r 200 "Run switch is off. Exiting."
+  fi
+  exit 0
+else
+  # Turn the run switch off at the start of a new execution
+  # Only 1 execution should run at a time
+  echo "OFF" > "$WORKING_DIR/.settings/run_switch.txt"
+fi
 
 FRAME_ID_FILE="$WORKING_DIR/tmp/last_frame_id.txt"
 LOG_FILE="$WORKING_DIR/logs/$(date +"%Y.%m.%d.%H.%M.%S").log"
@@ -25,7 +28,7 @@ LOG_FILE="$WORKING_DIR/logs/$(date +"%Y.%m.%d.%H.%M.%S").log"
 # Read the last frameId from the file
 if [[ -f "$FRAME_ID_FILE" ]]; then
   LAST_FRAME_ID=$(cat "$FRAME_ID_FILE")
-  if [[ "$VOICE_DEBUG" == "ON" ]]; then
+  if [[ "$VOICE_DEBUG" == "VERBOSE" ]]; then
     say -r 200 "Last frame ID: $LAST_FRAME_ID"
   else
     echo "Last frame ID: $LAST_FRAME_ID" >> $LOG_FILE
@@ -40,7 +43,7 @@ fi
 LATEST_FRAME_ID=$(sqlite3 "$DB_FILE" "SELECT frameId FROM allText ORDER BY frameId DESC LIMIT 1;")
 LATEST_FRAME_TIMESTAMP=$(sqlite3 "$DB_FILE" "SELECT timestamp FROM frames WHERE id = $LATEST_FRAME_ID;")
 
-if [[ "$VOICE_DEBUG" == "ON" ]]; then
+if [[ "$VOICE_DEBUG" == "VERBOSE" ]]; then
   say -r 200 "Latest Frame ID: $LATEST_FRAME_ID"
 fi
 
@@ -56,7 +59,7 @@ if [[ "$LAST_FRAME_ID" == "$LATEST_FRAME_ID" ]]; then
 
 else
   # DEBUGGING -----------------------------------------------------------------
-  if [[ "$VOICE_DEBUG" == "ON" ]]; then
+  if [[ "$VOICE_DEBUG" == "VERBOSE" ]]; then
     say -r 200 "Frame ID has changed. New frame ID: $LATEST_FRAME_ID"
   fi
   echo "$LATEST_FRAME_ID" > "$FRAME_ID_FILE"
@@ -74,7 +77,7 @@ LIMIT 1;
 EOF
 
   # DEBUGGING -----------------------------------------------------------------
-  if [[ "$VOICE_DEBUG" == "ON" ]]; then
+  if [[ "$VOICE_DEBUG" == "VERBOSE" ]]; then
     say -r 200 "Frame text written to $FILENAME"
   else
     echo "Frame text written to $FILENAME" >> "$LOG_FILE"
@@ -87,7 +90,7 @@ EOF
   cp "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" "$WORKING_DIR/summaries/now.txt"
   cp "$WORKING_DIR/advice/$LATEST_FRAME_TIMESTAMP.txt" "$WORKING_DIR/advice/now.txt"
 
-  if [ "$DEBUG_STATE" = "ON" ]; then
+  if [ "$VOICEDEBUG" = "ON" ]; then
     say -r 200 "New Summary available"
   fi
 
@@ -99,5 +102,7 @@ EOF
         say -r 180 -f "$WORKING_DIR/advice/now.txt"
       fi
   fi
+
+  # Allow new execution when this execution completes
+  echo "ON" > "$WORKING_DIR/.settings/run_switch.txt"
 fi
-echo "FALSE" > "$WORKING_DIR/tmp/is_running.txt"

@@ -17,3 +17,8 @@ I have a similar commands configured for debugging using comands "debugging on/o
 # Functionality
 So far this project will run my script every 2 minutes. During the process it checks for the newest frame in the rem database pulls the text extracted from it and summarizes my activity. It saves the summary to a file in my workspace and then reads the summary out loud if I have the voice enabled.
 Next I want to add followup prompts to the summary. I'll start with and advice prompt.
+
+
+## ROAD MAP
+
+Add memory device acknowledge common advice so that it is not reapeated in future advice.
