@@ -2,21 +2,12 @@
 
 # Directory containing the timestamped files
 source_dir=$1
+days=$2
 
-get_yesterday_date() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS
-        date -v-1d '+%Y-%m-%d'
-    else
-        # Linux
-        date -d 'yesterday' '+%Y-%m-%d'
-    fi
-}
-
-yesterday=$(get_yesterday_date)
-
+day=$(date -v-${days}d '+%Y-%m-%d')
+echo $day
 # Iterate over each file in the source directory
-for file in "$source_dir"/$yesterday*.txt; do
+for file in "$source_dir"/$day*.txt; do
     # Extract date from filename (assuming filenames are in YYYY-MM-DDTHH:MM:SS.sss.txt format)
     filename=$(basename "$file")
     timestamp="${filename%.txt}"
@@ -35,8 +26,3 @@ for file in "$source_dir"/$yesterday*.txt; do
     cat "$file" >> "$merged_file"
     echo "======================" >> "$merged_file"
 done
-filename="2024-07-01T18:30:58.553.txt"
-time_part="${filename:11:8}"
-
-# Convert 24-hour format to 12-hour format with AM/PM
-formatted_time=$(date -j -f "%H:%M:%S" "$time_part" +"%I:%M:%S %p")

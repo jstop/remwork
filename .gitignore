@@ -1,6 +1,7 @@
 tmp/*
 summaries/*
 advice/*
+context/*
 .settings/*
 closet/*
 logs/*
