@@ -5,7 +5,6 @@ source_dir=$1
 days=$2
 
 day=$(date -v-${days}d '+%Y-%m-%d')
-echo $day
 # Iterate over each file in the source directory
 for file in "$source_dir"/$day*.txt; do
     # Extract date from filename (assuming filenames are in YYYY-MM-DDTHH:MM:SS.sss.txt format)
