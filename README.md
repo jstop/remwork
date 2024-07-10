@@ -27,3 +27,9 @@ I had to add the /usr/bin/cron to full disk access in system settings.
 In order to do that I had to add /usr to the finder favorites because the system settings would otherwise not allow my to browse to the folder and add it to the whitelist.
 Now that the cron is working I don't think I will need to use the shortcut for the recurring process.
 I am now able to call the bash script directly from cron so I don't need the shortcut.
+
+### Python
+python3 -m venv .
+source ./bin/activate
+python3 -m pip install -r requirements.txt
+
