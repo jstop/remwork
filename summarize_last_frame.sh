@@ -14,7 +14,7 @@ if [[ "$RUN_SWITCH" == "OFF" ]]; then
   if [[ "$VOICE_DEBUG" == "ON" ]]; then
     say -r 200 "Run switch is off. Exiting."
   fi
-  exit 0
+  #exit 0
 else
   # Turn the run switch off at the start of a new execution
   # Only 1 execution should run at a time
@@ -84,11 +84,13 @@ EOF
   fi
 
 # SUMMARIZE FRAME -----------------------------------------------------------------
-  $WORKING_DIR/ollama_summarize.sh < $FILENAME > "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" 2> "$LOG_FILE"
-  $WORKING_DIR/ollama_advise.sh < "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" > "$WORKING_DIR/advice/$LATEST_FRAME_TIMESTAMP.txt" 2> "$LOG_FILE"
+  source $WORKING_DIR/bin/activate && python3 $WORKING_DIR/gemini_flash_summarize.py < $FILENAME > "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" 2> "$LOG_FILE"
+
+  #$WORKING_DIR/ollama_summarize.sh < $FILENAME > "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" 2> "$LOG_FILE"
+  #$WORKING_DIR/ollama_advise.sh < "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" > "$WORKING_DIR/advice/$LATEST_FRAME_TIMESTAMP.txt" 2> "$LOG_FILE"
 
   cp "$WORKING_DIR/summaries/$LATEST_FRAME_TIMESTAMP.txt" "$WORKING_DIR/summaries/now.txt"
-  cp "$WORKING_DIR/advice/$LATEST_FRAME_TIMESTAMP.txt" "$WORKING_DIR/advice/now.txt"
+  #cp "$WORKING_DIR/advice/$LATEST_FRAME_TIMESTAMP.txt" "$WORKING_DIR/advice/now.txt"
 
   if [ "$VOICEDEBUG" = "ON" ]; then
     say -r 200 "New Summary available"
