@@ -13,7 +13,7 @@ summary = sys.stdin.read()
 
 context="A summary of what the user(Josh) was possibly engaged in was taken from the screen captures."
 
-question="Can you give Josh 3 pieces of advice?\n\n"
+question="Can you give Josh 3 pieces of advice to help him with advance the goal of what he is doing?\n\n"
 followup=""
 formatted_prompt = f"{context} -------------------- Reference material: ------------- {summary} ------------------ Please answer the query using the provided information: {question}---------------------------------------------------------------------------{followup}"
 response = model.generate_content(formatted_prompt)

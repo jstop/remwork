@@ -1,27 +1,92 @@
 #!/bin/bash
 
 # Directory containing the timestamped files
-source_dir=$1
-days=$2
+source /Users/jstein/workspace/ai/remwork/.env
+DEBUG_=OFF
+days="${1:-0}"
+speach_enabled="$2:-false"
 
 day=$(date -v-${days}d '+%Y-%m-%d')
-# Iterate over each file in the source directory
-for file in "$source_dir"/$day*.txt; do
-    # Extract date from filename (assuming filenames are in YYYY-MM-DDTHH:MM:SS.sss.txt format)
+if [[ "$DEBUG" == "ON" ]]; then
+    echo "Creating directory: $day"
+fi
+
+source_dir="$WORKING_DIR/summaries"
+sub_dir="$source_dir/$day"
+if [[ "$DEBUG" == "ON" ]]; then
+    echo "Creating subdirectory: $sub_dir"
+fi
+mkdir -p "$sub_dir"
+
+merged_file="$sub_dir/merged_file.txt"
+
+# # Check if there are any files for the given date
+files=("$source_dir"/$day*.txt)
+if [ ${#files[@]} -eq 0 ] || [ ! -e "${files[0]}" ]; then
+    echo "No data found for $day"
+    exit 0
+fi
+
+# Process files
+for file in "${files[@]}"; do
     filename=$(basename "$file")
     timestamp="${filename%.txt}"
-    date_part="${timestamp:0:10}"  # Extract YYYY-MM-DD part
     time_part="${filename:11:8}"
-    formatted_time=$(date -j -f "%H:%M:%S" "$time_part" +"%I:%M:%S %p")
 
-    # Create subdirectory based on date if not already exists
-    sub_dir="$source_dir/$date_part"
-    mkdir -p "$sub_dir"
+    # Use a try-catch equivalent in bash
+    if ! formatted_time=$(date -j -f "%H:%M:%S" "$time_part" +"%I:%M:%S %p" 2>/dev/null); then
+        echo "Warning: Could not format time for $filename. Using original timestamp."
+        formatted_time="$time_part"
+    fi
 
-    # Merge contents into a single file with AM/PM timestamps
-    merged_file="$sub_dir/merged_file.txt"
     echo "Timestamp: $formatted_time" >> "$merged_file"
     echo "Content of $filename:" >> "$merged_file"
     cat "$file" >> "$merged_file"
     echo "======================" >> "$merged_file"
+    mv "$file" "$sub_dir"
 done
+
+# Generate summary
+SUMMARY_FILE="$WORKING_DIR/summaries/$day/summary.txt"
+if [ -s "$merged_file" ]; then
+    source $WORKING_DIR/bin/activate
+    if ! python3 $WORKING_DIR/gemini_flash_prompt.py -f "$merged_file" -p daily_merge > "$SUMMARY_FILE"; then
+        echo "Error: Failed to generate summary"
+        exit 1
+    fi
+
+    if [[ "$speech_enabled" == "true" ]]; then
+        say -r 200 -f "$SUMMARY_FILE"
+    fi
+else
+    if [[ "$DEBUG" == "ON" ]]; then
+        echo "No content to summarize for $day"
+    fi
+fi
+
+echo "Processing completed for $day"
+
+# Iterate over each file in the source directory
+#for file in "$source_dir"/$day*.txt; do
+#    # Extract date from filename (assuming filenames are in YYYY-MM-DDTHH:MM:SS.sss.txt format)
+#    filename=$(basename "$file")
+#    timestamp="${filename%.txt}"
+#    time_part="${filename:11:8}"
+#    formatted_time=$(date -j -f "%H:%M:%S" "$time_part" +"%I:%M:%S %p")
+#
+#    # Create subdirectory based on date if not already exists
+#
+#    # Merge contents into a single file with AM/PM timestamps
+#    echo "Timestamp: $formatted_time" >> "$merged_file"
+#    echo "Content of $filename:" >> "$merged_file"
+#    cat "$file" >> "$merged_file"
+#    echo "======================" >> "$merged_file"
+#    mv "$file" "$sub_dir"
+#done
+
+# Write summary to file
+#SUMMARY_FILE="$WORKING_DIR/summaries/$day/summary.txt"
+#source $WORKING_DIR/bin/activate && python3 $WORKING_DIR/gemini_flash_prompt.py -f $WORKING_DIR/summaries/$day/merged_file.txt -p daily_merge > $SUMMARY_FILE
+#if [[ "$2" == "true" ]]; then
+#    say -r 200 -f "$SUMMARY_FILE"
+#fi
