@@ -2,3 +2,4 @@ google-generativeai
 IPython
 Pillow
 aw-client
+pytz

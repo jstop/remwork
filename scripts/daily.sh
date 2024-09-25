@@ -2,10 +2,11 @@
 
 # Directory containing the timestamped files
 source /Users/jstein/workspace/ai/remwork/.env
-DEBUG_=OFF
+DEBUG=OFF
 days="${1:-0}"
-speach_enabled="$2:-false"
+speach_enabled="${2:-false}"
 
+echo "$speach_enabled"
 day=$(date -v-${days}d '+%Y-%m-%d')
 if [[ "$DEBUG" == "ON" ]]; then
     echo "Creating directory: $day"
@@ -23,7 +24,9 @@ merged_file="$sub_dir/merged_file.txt"
 # # Check if there are any files for the given date
 files=("$source_dir"/$day*.txt)
 if [ ${#files[@]} -eq 0 ] || [ ! -e "${files[0]}" ]; then
-    echo "No data found for $day"
+    if [[ "$DEBUG" == "ON" ]]; then
+        echo "No data found for $day"
+    fi
     exit 0
 fi
 
@@ -48,15 +51,21 @@ done
 
 # Generate summary
 SUMMARY_FILE="$WORKING_DIR/summaries/$day/summary.txt"
+GOAL_FILE="$WORKING_DIR/summaries/$day/goals.txt"
 if [ -s "$merged_file" ]; then
     source $WORKING_DIR/bin/activate
     if ! python3 $WORKING_DIR/gemini_flash_prompt.py -f "$merged_file" -p daily_merge > "$SUMMARY_FILE"; then
         echo "Error: Failed to generate summary"
         exit 1
     fi
+    if ! python3 $WORKING_DIR/gemini_flash_prompt.py -f "$merged_file" -p goals > "$GOAL_FILE"; then
+        echo "Error: Failed to generate summary"
+        exit 1
+    fi
 
     if [[ "$speech_enabled" == "true" ]]; then
         say -r 200 -f "$SUMMARY_FILE"
+        say -r 200 -f "$GOAL_FILE"
     fi
 else
     if [[ "$DEBUG" == "ON" ]]; then
@@ -64,7 +73,7 @@ else
     fi
 fi
 
-echo "Processing completed for $day"
+#echo "Processing completed for $day"
 
 # Iterate over each file in the source directory
 #for file in "$source_dir"/$day*.txt; do
