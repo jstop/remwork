@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 load_dotenv('/Users/jstein/workspace/ai/remwork/.env')
 
 WORKING_DIR = os.getenv('WORKING_DIR')
-LOG_DIR = os.getenv('LOG_DIR')
 VOICE_TOGGLE = os.getenv('VOICE_TOGGLE')
 ADVICE_VOICE_TOGGLE = os.getenv('ADVICE_VOICE_TOGGLE')
 DEBUG_VOICE_TOGGLE = os.getenv('DEBUG_VOICE_TOGGLE')
@@ -55,7 +54,7 @@ def main():
     write_file(f"{WORKING_DIR}/.settings/run_switch.txt", "OFF")
 
     frame_id_file = f"{WORKING_DIR}/tmp/last_frame_id.txt"
-    log_file = f"{PDS_PATH}/logs/{datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.log"
+    log_file = f"{PDS_PATH}/logs/{datetime.now().strftime('%Y.%m.%d.%H')}.log"
 
     if os.path.exists(frame_id_file):
         last_frame_id = read_file(frame_id_file)
