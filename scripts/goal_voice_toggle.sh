@@ -2,18 +2,18 @@
 source /Users/jstein/workspace/ai/remwork/.env
 
 # Check if the state file exists
-if [ ! -f $GOAL_VOICE_TOGGLE ]; then
-  echo "OFF" > $GOAL_VOICE_TOGGLE
+if [ ! -f $ADVICE_VOICE_TOGGLE ]; then
+  echo "OFF" > $ADVICE_VOICE_TOGGLE
 fi
 
 # Read the current state
-STATE=$(cat $GOAL_VOICE_TOGGLE)
+STATE=$(cat $ADVICE_VOICE_TOGGLE)
 
 # Toggle the state
 if [ "$STATE" = "OFF" ]; then
-  echo "ON" > $GOAL_VOICE_TOGGLE
-  say -r 180 "GOAL Speach enabled"
+  echo "ON" > $ADVICE_VOICE_TOGGLE
+  say -r 180 "Speach enabled"
 else
-  echo "OFF" > $GOAL_VOICE_TOGGLE
+  echo "OFF" > $ADVICE_VOICE_TOGGLE
   say -r 180 "I'll be quite now"
 fi

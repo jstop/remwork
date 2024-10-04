@@ -1,4 +1,4 @@
-tmp/*
+.tmp/*
 summaries/*
 advice/*
 context/*

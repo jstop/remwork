@@ -3,3 +3,4 @@ IPython
 Pillow
 aw-client
 pytz
+dotenv

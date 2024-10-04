@@ -10,8 +10,10 @@ from dotenv import load_dotenv
 load_dotenv('/Users/jstein/workspace/ai/remwork/.env')
 
 WORKING_DIR = os.getenv('WORKING_DIR')
+PYTHON_PATH = os.getenv('PYTHON_PATH')
 VOICE_TOGGLE = os.getenv('VOICE_TOGGLE')
 ADVICE_VOICE_TOGGLE = os.getenv('ADVICE_VOICE_TOGGLE')
+GOAL_VOICE_TOGGLE = os.getenv('GOAL_VOICE_TOGGLE')
 DEBUG_VOICE_TOGGLE = os.getenv('DEBUG_VOICE_TOGGLE')
 PDS_PATH = os.getenv('PDS_PATH')
 DB_FILE = os.getenv('DB_FILE')
@@ -35,6 +37,7 @@ def main():
     run_switch = read_file(f"{WORKING_DIR}/.settings/run_switch.txt")
     voice_state = read_file(VOICE_TOGGLE)
     advice_voice_state = read_file(ADVICE_VOICE_TOGGLE)
+    goal_voice_state = read_file(GOAL_VOICE_TOGGLE)
     voice_debug = read_file(DEBUG_VOICE_TOGGLE)
     afk = aw.afk()
     if afk:
@@ -53,7 +56,7 @@ def main():
     # Turn the run switch off at the start of a new execution
     write_file(f"{WORKING_DIR}/.settings/run_switch.txt", "OFF")
 
-    frame_id_file = f"{WORKING_DIR}/tmp/last_frame_id.txt"
+    frame_id_file = f"{WORKING_DIR}/.tmp/last_frame_id.txt"
     log_file = f"{PDS_PATH}/logs/{datetime.now().strftime('%Y.%m.%d.%H')}.log"
 
     if os.path.exists(frame_id_file):
@@ -83,14 +86,14 @@ def main():
             say("Frame ID has not changed. Exiting.", 200)
         else:
             log("Frame ID has not changed. Exiting.", log_file)
-        write_file(f"{WORKING_DIR}/tmp/is_running.txt", "FALSE")
+        write_file(f"{WORKING_DIR}/.tmp/is_running.txt", "FALSE")
         return
 
     if voice_debug == "VERBOSE":
         say(f"Frame ID has changed. New frame ID: {latest_frame_id}", 200)
     write_file(frame_id_file, str(latest_frame_id))
 
-    filename = f"{WORKING_DIR}/tmp/last_frame.txt"
+    filename = f"{WORKING_DIR}/.tmp/last_frame.txt"
     cursor.execute("SELECT text FROM allText ORDER BY frameId DESC LIMIT 1")
     frame_text = cursor.fetchone()[0]
     conn.close()
@@ -106,17 +109,17 @@ def main():
     summary_file = f"{PDS_PATH}/summaries/{latest_frame_timestamp}.txt"
     summary_comparison_file = f"{PDS_PATH}/summaries/comparison-{latest_frame_timestamp}.txt"
     goal_file = f"{PDS_PATH}/goals/{latest_frame_timestamp}.txt"
-    subprocess.run([f"{WORKING_DIR}/bin/python3", f"{WORKING_DIR}/scripts/gemini/flash_summarize.py"],
+    subprocess.run([f"{PYTHON_PATH}/bin/python3", f"{WORKING_DIR}/scripts/gemini/flash_summarize.py"],
                    input=frame_text.encode(),
                    stdout=open(summary_file, 'w'),
                    stderr=open(log_file, 'a'))
 
-    subprocess.run([f"{WORKING_DIR}/bin/python3", f"{WORKING_DIR}/scripts/gemini/flash_compare.py"],
+    subprocess.run([f"{PYTHON_PATH}/bin/python3", f"{WORKING_DIR}/scripts/gemini/flash_compare.py"],
                    input=("new summary:\n" + read_file(summary_file) +"\n\n last summary: \n" + read_file(f"{PDS_PATH}/summaries/now.txt")).encode(),
                    stdout=open(summary_comparison_file, 'w'),
                    stderr=open(log_file, 'a'))
 
-    subprocess.run([f"{WORKING_DIR}/bin/python3", f"{WORKING_DIR}/scripts/gemini/flash_summarize.py"],
+    subprocess.run([f"{PYTHON_PATH}/bin/python3", f"{WORKING_DIR}/scripts/gemini/flash_summarize.py"],
                    input=frame_text.encode(),
                    stdout=open(goal_file, 'w'),
                    stderr=open(log_file, 'a'))
@@ -134,14 +137,20 @@ def main():
         say(f"At {timestamp.strftime('%A at %I:%M %p')}", 140)
 
         #parse json from summary_comparison_file
-        summary_comparison = json.load(open(summary_comparison_file, 'r'))
-        if summary_comparison['answer'] == "no":
+        try:
+            summary_comparison = json.load(open(summary_comparison_file, 'r'))
+        except json.decoder.JSONDecodeError:
+            summary_comparison = {'answer': 'no', 'difference': ''}
+        if summary_comparison['answer'] == "yes":
             say(summary_comparison['difference'])
         else:
-            with open(f"{PDS_PATH}/summaries/comparison-now.txt", 'r') as f:
-                say(f.read(), 180)
+            #with open(f"{PDS_PATH}/summaries/comparison-now.txt", 'r') as f:
+            #    say(f.read(), 180)
             with open(f"{PDS_PATH}/summaries/now.txt", 'r') as f:
                 say(f.read(), 180)
+            if goal_voice_state == "ON":
+                with open(goal_file, 'r') as f:
+                    say(f.read(), 180)
         if advice_voice_state == "ON":
             say(f"At {timestamp.strftime('%A at %I:%M %p')}", 140)
             with open(f"{PDS_PATH}/advice/now.txt", 'r') as f:

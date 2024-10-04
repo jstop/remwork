@@ -2,17 +2,16 @@
 
 # Directory containing the timestamped files
 source /Users/jstein/workspace/ai/remwork/.env
-DEBUG=OFF
+DEBUG=ON
 days="${1:-0}"
 speach_enabled="${2:-false}"
 
-echo "$speach_enabled"
 day=$(date -v-${days}d '+%Y-%m-%d')
 if [[ "$DEBUG" == "ON" ]]; then
     echo "Creating directory: $day"
 fi
 
-source_dir="$WORKING_DIR/summaries"
+source_dir="$PDS_PATH/summaries"
 sub_dir="$source_dir/$day"
 if [[ "$DEBUG" == "ON" ]]; then
     echo "Creating subdirectory: $sub_dir"
@@ -50,15 +49,15 @@ for file in "${files[@]}"; do
 done
 
 # Generate summary
-SUMMARY_FILE="$WORKING_DIR/summaries/$day/summary.txt"
-GOAL_FILE="$WORKING_DIR/summaries/$day/goals.txt"
+SUMMARY_FILE="$PDS_PATH/summaries/$day/summary.txt"
+GOAL_FILE="$PDS_PATH/summaries/$day/goals.txt"
 if [ -s "$merged_file" ]; then
-    source $WORKING_DIR/bin/activate
-    if ! python3 $WORKING_DIR/gemini_flash_prompt.py -f "$merged_file" -p daily_merge > "$SUMMARY_FILE"; then
+    source $PYTHON_PATH/bin/activate
+    if ! python3 $WORKING_DIR/scripts/gemini/prompt.py -f "$merged_file" -p daily_merge > "$SUMMARY_FILE"; then
         echo "Error: Failed to generate summary"
         exit 1
     fi
-    if ! python3 $WORKING_DIR/gemini_flash_prompt.py -f "$merged_file" -p goals > "$GOAL_FILE"; then
+    if ! python3 $WORKING_DIR/scripts/gemini/prompt.py -f "$merged_file" -p goals > "$GOAL_FILE"; then
         echo "Error: Failed to generate summary"
         exit 1
     fi
@@ -94,8 +93,8 @@ fi
 #done
 
 # Write summary to file
-#SUMMARY_FILE="$WORKING_DIR/summaries/$day/summary.txt"
-#source $WORKING_DIR/bin/activate && python3 $WORKING_DIR/gemini_flash_prompt.py -f $WORKING_DIR/summaries/$day/merged_file.txt -p daily_merge > $SUMMARY_FILE
+#SUMMARY_FILE="$PDS_PATH/summaries/$day/summary.txt"
+#source $PDS_PATH/bin/activate && python3 $PDS_PATH/gemini_flash_prompt.py -f $WORKING_DIR/summaries/$day/merged_file.txt -p daily_merge > $SUMMARY_FILE
 #if [[ "$2" == "true" ]]; then
 #    say -r 200 -f "$SUMMARY_FILE"
 #fi
